@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">StoryApp</string>
+    <string name="create_account">Create Account</string>
+    <string name="header">See every people story!</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="have_an_account">Have an Account?</string>
+    <string name="login">Login</string>
+    <string name="welcome">Welcome</string>
+    <string name="share_story">Let\'s share your story here!</string>
+    <string name="register">Register</string>
+    <string name="havean_acc">Still don\'t have an accout?</string>
+    <string name="username">Username</string>
+    <string name="description_story">Description Story</string>
+    <string name="gallery">Gallery</string>
+    <string name="camera">Camera</string>
+    <string name="add_story">Add Story</string>
+    <string name="image_story">Image Story</string>
+    <string name="upload">Upload</string>
+    <string name="story_app">Story App</string>
+    <string name="empty_image_warning">Silakan masukkan berkas gambar terlebih dahulu.</string>
+</resources>
