@@ -8,6 +8,7 @@ import androidx.activity.viewModels
 import com.bumptech.glide.Glide
 import com.example.storyapp.databinding.ActivityDetailStoryBinding
 import com.example.storyapp.ui.story.StoryViewModel
+import com.example.storyapp.utils.ResultState
 import com.example.storyapp.utils.ViewModelFactory
 
 class DetailStoryActivity : AppCompatActivity() {
@@ -26,21 +27,27 @@ class DetailStoryActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val detail = intent.getStringExtra(EXTRA_USER).toString()
-         storyViewModel.getDetailStoryUser(detail)
-
-
-        storyViewModel.isLoading.observe(this) {
-            showLoading(it)
+        storyViewModel.getSession().observe(this) { user ->
+            storyViewModel.getDetail(user.token, detail)
         }
 
-        storyViewModel.detailData.observe(this) { detailStory ->
-            binding.apply {
-                Glide.with(this@DetailStoryActivity)
-                    .load(detailStory.photoUrl)
-                    .into(imageStory)
-                username.text = detailStory.name
-                Log.d(TAG, "name : ${detailStory.name}")
-                description.text = detailStory.description
+        storyViewModel.detailResult.observe(this) { result ->
+            if (result != null) {
+                when(result){
+                    is ResultState.Loading -> {
+                        showLoading(true)
+                    }
+                    is ResultState.Success -> {
+                        binding.apply {
+                            Glide.with(this@DetailStoryActivity).load(result.data.story?.photoUrl).into(imageStory)
+                            description.text = result.data.story?.description
+                            showLoading(false)
+                        }
+                    }
+                    is ResultState.Error -> {
+                        showLoading(false)
+                    }
+                }
             }
         }
     }

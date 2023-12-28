@@ -8,9 +8,6 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
-import com.example.storyapp.R
-import com.example.storyapp.data.local.entity.UsersEntity
-import com.example.storyapp.databinding.ActivityLoginBinding
 import com.example.storyapp.databinding.ActivityRegisterBinding
 import com.example.storyapp.ui.login.LoginActivity
 import com.example.storyapp.utils.ViewModelFactory
@@ -18,21 +15,23 @@ import com.example.storyapp.utils.ViewModelFactory
 class RegisterActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityRegisterBinding
-    private val registerViewModel by viewModels<RegisterViewModel> { ViewModelFactory.getInstance(this) }
+    private val registerViewModel by viewModels<RegisterViewModel> {
+        ViewModelFactory.getInstance(
+            this
+        )
+    }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding =  ActivityRegisterBinding.inflate(layoutInflater)
+        binding = ActivityRegisterBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        playAnimation()
 
         binding.login.setOnClickListener {
             val intent = Intent(this, LoginActivity::class.java)
             startActivity(intent)
-        }
-
-        registerViewModel.isLoading.observe(this) {
-            showLoading(it)
         }
 
         registerViewModel.registrationResult.observe(this) {
@@ -49,16 +48,15 @@ class RegisterActivity : AppCompatActivity() {
             val name = binding.nameEditText.text.toString()
             val password = binding.passwordEditText.text.toString()
 
-            val users = UsersEntity(email, name, password)
-
             if (email.isNotEmpty() && name.isNotEmpty() && password.isNotEmpty()) {
-                registerViewModel.register(users)
+                registerViewModel.register(name, email, password)
             } else {
                 showErrorDialog("Fill it All First!")
             }
 
-            playAnimation()
         }
+
+
     }
 
     private fun showLoading(isLoading: Boolean) {
@@ -70,17 +68,34 @@ class RegisterActivity : AppCompatActivity() {
         val story = ObjectAnimator.ofFloat(binding.story, View.ALPHA, 1f).setDuration(100)
         val image = ObjectAnimator.ofFloat(binding.image, View.ALPHA, 1f).setDuration(100)
         val email = ObjectAnimator.ofFloat(binding.email, View.ALPHA, 1f).setDuration(100)
-        val emailEdit = ObjectAnimator.ofFloat(binding.emailEditTextLayout, View.ALPHA, 1f).setDuration(100)
+        val emailEdit =
+            ObjectAnimator.ofFloat(binding.emailEditTextLayout, View.ALPHA, 1f).setDuration(100)
         val name = ObjectAnimator.ofFloat(binding.name, View.ALPHA, 1f).setDuration(100)
-        val nameEdit = ObjectAnimator.ofFloat(binding.nameEditTextLayout, View.ALPHA, 1f).setDuration(100)
+        val nameEdit =
+            ObjectAnimator.ofFloat(binding.nameEditTextLayout, View.ALPHA, 1f).setDuration(100)
         val password = ObjectAnimator.ofFloat(binding.password, View.ALPHA, 1f).setDuration(100)
-        val passwordEdit = ObjectAnimator.ofFloat(binding.passwordEditTextLayout, View.ALPHA, 1f).setDuration(100)
-        val btnRegister = ObjectAnimator.ofFloat(binding.btnRegister, View.ALPHA, 1f).setDuration(100)
+        val passwordEdit =
+            ObjectAnimator.ofFloat(binding.passwordEditTextLayout, View.ALPHA, 1f).setDuration(100)
+        val btnRegister =
+            ObjectAnimator.ofFloat(binding.btnRegister, View.ALPHA, 1f).setDuration(100)
         val acc = ObjectAnimator.ofFloat(binding.acc, View.ALPHA, 1f).setDuration(100)
         val login = ObjectAnimator.ofFloat(binding.login, View.ALPHA, 1f).setDuration(100)
 
         AnimatorSet().apply {
-            playSequentially(create, story, image, email, emailEdit, name, nameEdit, password, passwordEdit,btnRegister, acc, login)
+            playSequentially(
+                create,
+                story,
+                image,
+                email,
+                emailEdit,
+                name,
+                nameEdit,
+                password,
+                passwordEdit,
+                btnRegister,
+                acc,
+                login
+            )
             startDelay = 200
         }.start()
 

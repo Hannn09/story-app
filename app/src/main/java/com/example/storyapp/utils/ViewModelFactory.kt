@@ -10,12 +10,12 @@ import com.example.storyapp.ui.login.LoginViewModel
 import com.example.storyapp.ui.register.RegisterViewModel
 import com.example.storyapp.ui.story.StoryViewModel
 
-class ViewModelFactory(private val userRepository: UserRepository, private val preferences: SettingsPreferences) : ViewModelProvider.NewInstanceFactory() {
+class ViewModelFactory(private val userRepository: UserRepository) : ViewModelProvider.NewInstanceFactory() {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(RegisterViewModel::class.java)) {
             return RegisterViewModel(userRepository) as T
         } else if (modelClass.isAssignableFrom(LoginViewModel::class.java)) {
-            return LoginViewModel(userRepository, preferences) as T
+            return LoginViewModel(userRepository) as T
         } else if (modelClass.isAssignableFrom(StoryViewModel::class.java)) {
             return StoryViewModel(userRepository) as T
         }
@@ -25,10 +25,15 @@ class ViewModelFactory(private val userRepository: UserRepository, private val p
 
     companion object {
         @Volatile
-        private var instance: ViewModelFactory? = null
-        fun getInstance(context: Context): ViewModelFactory =
-            instance ?: synchronized(this) {
-                instance ?: ViewModelFactory(Injection.provideRepository(context), SettingsPreferences(context.dataStore))
-            }.also { instance = it }
+        private var INSTANCE: ViewModelFactory? = null
+        @JvmStatic
+        fun getInstance(context: Context): ViewModelFactory {
+            if (INSTANCE == null) {
+                synchronized(ViewModelFactory::class.java) {
+                    INSTANCE = ViewModelFactory(Injection.provideRepository(context))
+                }
+            }
+            return INSTANCE as ViewModelFactory
+        }
     }
 }

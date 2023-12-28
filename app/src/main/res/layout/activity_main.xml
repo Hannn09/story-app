@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/backgroundColor"
-    tools:context=".ui.MainActivity">
+    tools:context=".ui.home.MainActivity">
 
     <TextView
         android:id="@+id/tv_story"
@@ -22,13 +22,23 @@
 
     <ImageView
         android:id="@+id/btnLogout"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
         android:layout_marginEnd="24dp"
         android:src="@drawable/log_out"
         app:layout_constraintTop_toTopOf="@id/tv_story"
         app:layout_constraintBottom_toBottomOf="@id/tv_story"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <ImageView
+        android:id="@+id/btnMap"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:layout_marginEnd="32dp"
+        android:src="@drawable/map"
+        app:layout_constraintTop_toTopOf="@id/tv_story"
+        app:layout_constraintBottom_toBottomOf="@id/tv_story"
+        app:layout_constraintEnd_toStartOf="@id/btnLogout" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_add"

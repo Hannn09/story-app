@@ -1,139 +1,138 @@
 package com.example.storyapp.data
 
-import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.example.storyapp.data.local.entity.UsersEntity
-import com.example.storyapp.data.local.room.UsersDao
+import androidx.lifecycle.liveData
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.PagingSource
+import androidx.paging.liveData
+import com.example.storyapp.data.model.SessionModel
 import com.example.storyapp.data.remote.response.ListStoryItem
-import com.example.storyapp.data.remote.response.Story
+import com.example.storyapp.data.remote.response.RegisterResponse
+import com.example.storyapp.data.remote.response.StoryResponse
 import com.example.storyapp.data.remote.retrofit.ApiService
+import com.example.storyapp.utils.ResultState
 import com.example.storyapp.utils.SettingsPreferences
-import com.example.storyapp.utils.SharedPreference
-import com.example.storyapp.utils.dataStore
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
+import okhttp3.Callback
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
-import okhttp3.RequestBody
-import retrofit2.HttpException
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import retrofit2.Call
+import retrofit2.Response
+import java.io.File
 
 class UserRepository private constructor(
+    private val pref: SettingsPreferences,
     private val apiService: ApiService,
-    private val usersDao: UsersDao,
-    private val pref: SettingsPreferences
 ) {
+
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
-    private val _listStory = MutableLiveData<List<ListStoryItem>>()
-    val listStory: LiveData<List<ListStoryItem>> = _listStory
+    private val _list = MutableLiveData<StoryResponse>()
+    val list: LiveData<StoryResponse> = _list
 
-    private val _detailData = MutableLiveData<Story>()
-    val detailData: LiveData<Story> = _detailData
-
-    suspend fun getToken(): String {
-        return pref.getToken().first()
+    suspend fun registerUser(name: String, email: String, password: String): RegisterResponse {
+        return apiService.register(name, email, password)
     }
 
-    suspend fun registerUser(users: UsersEntity) {
-        _isLoading.value = true
-        val requestName = users.name
-        val requestEmail = users.email
-        val requestPassword = users.password
-
+    suspend fun setLoginUser(email: String, password: String) = liveData {
+        emit(ResultState.Loading)
         try {
-            apiService.register(requestName, requestEmail, requestPassword)
+            val response = apiService.login(email, password)
+            emit(ResultState.Success(response))
+        } catch (e: Exception) {
+            emit(ResultState.Error(e.message.toString()))
+        }
+    }
 
-            GlobalScope.launch(Dispatchers.IO) {
-                usersDao.insertUsers(users)
+    fun getListStory(token: String) = liveData {
+        emit(ResultState.Loading)
+        try {
+            val response = apiService.getStories("Bearer $token")
+            emit(ResultState.Success(response))
+        } catch (e: Exception) {
+            emit(ResultState.Error("${e.message}"))
+        }
+    }
+
+    fun getListStoryWithLocation(token: String) {
+        _isLoading.value = true
+        val client = apiService.getStoriesWithLocation("Bearer $token")
+        client.enqueue(object : retrofit2.Callback<StoryResponse> {
+            override fun onResponse(call: Call<StoryResponse>, response: Response<StoryResponse>) {
+                try {
+                    _isLoading.value = false
+                    if (response.isSuccessful && response.body() != null) {
+                        _list.value = response.body()
+                    } else {
+                        Log.d(TAG, "onResponse: ${response.message()}")
+                    }
+                } catch (e: Exception) {
+                    Log.d(TAG, "Error Loaded: ${e.message.toString()}")
+                }
             }
 
-            _isLoading.value = false
-
-        } catch (e: Exception) {
-            _isLoading.value = false
-        }
-    }
-
-    suspend fun setLoginUser(email: String, password: String): Boolean {
-        _isLoading.value = true
-        val requestEmail = email
-        val requestPassword = password
-
-        try {
-            val response = apiService.login(requestEmail, requestPassword)
-
-            if (!response.error) {
+            override fun onFailure(call: Call<StoryResponse>, t: Throwable) {
                 _isLoading.value = false
-                pref.saveToken(response.loginResult.token)
-                Log.d(TAG, "Login is Successfull : TOKEN : ${response.loginResult.token}}")
-                return true
-            } else {
-                _isLoading.value = false
-                return false
+                Log.d(TAG, "onFailure: ${t.message.toString()}")
             }
 
+        })
+
+    }
+
+    suspend fun getDetailStory(token: String, id: String) = liveData {
+        emit(ResultState.Loading)
+        try {
+            val response = apiService.getDetailStories("Bearer $token", id)
+            emit(ResultState.Success(response))
         } catch (e: Exception) {
-            _isLoading.value = false
-            return false
+            emit(ResultState.Error("${e.message}"))
         }
     }
 
-    suspend fun getListStory() {
-        _isLoading.value = true
-
+    fun insertStories(token: String, imageFile: File, description: String) = liveData {
+        emit(ResultState.Loading)
+        val requestBody = description.toRequestBody("text/plain".toMediaType())
+        val requestImageFile = imageFile.asRequestBody("image/jpeg".toMediaType())
+        val multipartBody = MultipartBody.Part.createFormData(
+            "photo",
+            imageFile.name,
+            requestImageFile
+        )
         try {
-            val response = apiService.getStories()
-            Log.d(TAG, "List Story : $response")
-
-            if (!response.error) {
-                _isLoading.value = false
-                Log.d(TAG, "List Story : $response")
-                _listStory.value = response.listStory.map { it!! }
-            } else {
-                Log.d(TAG, "getListStory: gagal")
-                _isLoading.value = false
-            }
-
+            val successResponse =
+                apiService.insertStories("Bearer $token", multipartBody, requestBody)
+            emit(ResultState.Success(successResponse))
         } catch (e: Exception) {
-            _isLoading.value = false
+            emit(ResultState.Error("${e.message}"))
         }
     }
 
-
-
-    suspend fun getDetailStory(id: String) {
-        _isLoading.value = true
-        try {
-            val detailStory = apiService.getDetailStories(id)
-            _isLoading.value = false
-            _detailData.value = detailStory.story
-        } catch (e: Exception) {
-            _isLoading.value = false
-        }
+    fun getStories(): LiveData<PagingData<ListStoryItem>> {
+        return Pager(config = PagingConfig(
+            pageSize = 5
+        ), pagingSourceFactory = {
+            StoryPagingSource(pref, apiService)
+        }).liveData
     }
 
-    suspend fun insertStories(file: MultipartBody.Part, description: RequestBody) {
-        _isLoading.value = true
-        try {
-            _isLoading.value = false
-            apiService.insertStories(file, description)
-        } catch (e: HttpException) {
-            _isLoading.value = false
-            Log.d(TAG, "Error : ${e.message().toString()}")
-        }
+    suspend fun saveSession(user: SessionModel) {
+        pref.saveSession(user)
+    }
+
+    fun getSession(): Flow<SessionModel> {
+        return pref.getSession()
     }
 
     suspend fun logout() {
         pref.deleteToken()
-    }
-
-    suspend fun saveUser(token: String) {
-        pref.saveToken(token)
     }
 
 
@@ -143,11 +142,10 @@ class UserRepository private constructor(
         @Volatile
         private var instance: UserRepository? = null
         fun getInstance(
+            pref: SettingsPreferences,
             apiService: ApiService,
-            usersDao: UsersDao,
-            pref: SettingsPreferences
         ): UserRepository = instance ?: synchronized(this) {
-            instance ?: UserRepository(apiService, usersDao, pref)
+            instance ?: UserRepository(pref, apiService)
         }.also { instance = it }
     }
 

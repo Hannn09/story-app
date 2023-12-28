@@ -6,6 +6,9 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.util.Pair
+import androidx.paging.PagingDataAdapter
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.storyapp.data.remote.response.ListStoryItem
@@ -13,9 +16,9 @@ import com.example.storyapp.databinding.ItemsStoryBinding
 import com.example.storyapp.ui.story.detail.DetailStoryActivity
 import com.example.storyapp.ui.story.detail.DetailStoryActivity.Companion.EXTRA_USER
 
-class StoryAdapter(private val listStory: List<ListStoryItem>): RecyclerView.Adapter<StoryAdapter.ListViewHolder>() {
+class StoryAdapter: PagingDataAdapter<ListStoryItem, StoryAdapter.MyViewHolder>(DIFF_CALLBACK) {
 
-     class ListViewHolder(private val itemsStoryBinding: ItemsStoryBinding): RecyclerView.ViewHolder(itemsStoryBinding.root) {
+     class MyViewHolder(private val itemsStoryBinding: ItemsStoryBinding): RecyclerView.ViewHolder(itemsStoryBinding.root) {
         fun bind(story: ListStoryItem) {
             itemsStoryBinding.apply {
                 Glide.with(itemView.context)
@@ -45,17 +48,28 @@ class StoryAdapter(private val listStory: List<ListStoryItem>): RecyclerView.Ada
 
      }
 
-    override fun onCreateViewHolder(
-        parent: ViewGroup,
-        viewType: Int
-    ): StoryAdapter.ListViewHolder {
-        val itemsStoryBinding = ItemsStoryBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return ListViewHolder(itemsStoryBinding)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
+        val view = ItemsStoryBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return MyViewHolder((view))
     }
 
-    override fun onBindViewHolder(holder: StoryAdapter.ListViewHolder, position: Int) {
-        holder.bind(listStory[position])
+    override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
+        val list = getItem(position)
+        if (list != null) {
+            holder.bind(list)
+        }
     }
 
-    override fun getItemCount(): Int = listStory.size
+    companion object {
+        val DIFF_CALLBACK = object : DiffUtil.ItemCallback<ListStoryItem>(){
+            override fun areContentsTheSame(oldItem: ListStoryItem, newItem: ListStoryItem): Boolean {
+                return oldItem.id == newItem.id
+            }
+
+            override fun areItemsTheSame(oldItem: ListStoryItem, newItem: ListStoryItem): Boolean {
+                return oldItem.id == newItem.id
+            }
+        }
+    }
+
 }

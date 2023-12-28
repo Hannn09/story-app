@@ -5,22 +5,19 @@ import android.animation.ObjectAnimator
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
-import com.example.storyapp.data.local.entity.UsersEntity
+import com.example.storyapp.data.model.SessionModel
 import com.example.storyapp.ui.register.RegisterActivity
 import com.example.storyapp.databinding.ActivityLoginBinding
-import com.example.storyapp.ui.MainActivity
-import com.example.storyapp.utils.SettingsPreferences
-import com.example.storyapp.utils.SharedPreference
+import com.example.storyapp.ui.home.MainActivity
+import com.example.storyapp.utils.ResultState
 import com.example.storyapp.utils.ViewModelFactory
 
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
-    private lateinit var prefs : SharedPreference
     private val loginViewModel by viewModels<LoginViewModel> { ViewModelFactory.getInstance(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,43 +25,46 @@ class LoginActivity : AppCompatActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+
         playAnimation()
+        setupAction()
 
         binding.register.setOnClickListener {
             val intent = Intent(this, RegisterActivity::class.java)
             startActivity(intent)
         }
 
-        loginViewModel.isLoading.observe(this) {
-            showLoading(it)
-        }
+        binding.emailEditText.setText("almas@gmail.com")
+        binding.passwordEditText.setText("12345678")
+    }
 
-        val emailEditText = binding.emailEditText
-        emailEditText.setText("almas@gmail.com")
-        val passwordEditText = binding.passwordEditText
-        passwordEditText.setText("12345678")
-
+    private fun setupAction() {
         binding.btnLogin.setOnClickListener {
             val email = binding.emailEditText.text.toString()
             val password = binding.passwordEditText.text.toString()
 
-            if (email.isNotEmpty() && password.isNotEmpty()) {
-                loginViewModel.login(email, password)
-            } else {
-                showErrorDialog("Fill it All First!")
+            showLoading(true)
+
+            loginViewModel.login(email, password)
+            loginViewModel.account.observe(this){ user->
+                if (user != null){
+                    when (user) {
+                        is ResultState.Loading -> {
+                            showLoading(true)
+                        }
+                        is ResultState.Success -> {
+                            loginViewModel.setupAction(SessionModel(email, user.data.loginResult?.token!!))
+                            showLoading(false)
+                            navigateToMainPage()
+                        }
+                        is ResultState.Error -> {
+                            showLoading(false)
+                        }
+                    }
+                }
             }
 
         }
-
-        loginViewModel.isLogin.observe(this) { userLogin ->
-            if (userLogin) {
-                navigateToMainPage()
-            } else {
-                showErrorDialog("Username or Password is Wrong!")
-                Log.d("LoginActivity", "Username or Password is Wrong!")
-            }
-        }
-
     }
 
     private fun playAnimation() {
@@ -94,7 +94,7 @@ class LoginActivity : AppCompatActivity() {
                 acc,
                 register
             )
-            startDelay = 200
+            startDelay = 100
         }.start()
 
     }
@@ -106,6 +106,8 @@ class LoginActivity : AppCompatActivity() {
 
     private fun navigateToMainPage() {
         val intent = Intent(this, MainActivity::class.java)
+        intent.flags =
+            Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
         startActivity(intent)
         finish()
     }

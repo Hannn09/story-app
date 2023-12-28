@@ -3,36 +3,37 @@ package com.example.storyapp.data.remote.response
 import com.google.gson.annotations.SerializedName
 
 data class DetailResponse(
+
 	@field:SerializedName("error")
-	val error: Boolean,
+	val error: Boolean? = null,
 
 	@field:SerializedName("message")
-	val message: String,
+	val message: String? = null,
 
 	@field:SerializedName("story")
-	val story: Story
+	val story: Story? = null
 )
 
 data class Story(
 	@field:SerializedName("photoUrl")
-	val photoUrl: String,
+	val photoUrl: String? = null,
 
 	@field:SerializedName("createdAt")
-	val createdAt: String,
+	val createdAt: String? = null,
 
 	@field:SerializedName("name")
-	val name: String,
+	val name: String? = null,
 
 	@field:SerializedName("description")
-	val description: String,
+	val description: String? = null,
 
 	@field:SerializedName("lon")
-	val lon: String,
+	val lon: Any? = null,
 
 	@field:SerializedName("id")
-	val id: String,
+	val id: String? = null,
 
 	@field:SerializedName("lat")
-	val lat: String
+	val lat: Any? = null
 )
 
